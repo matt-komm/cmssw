@@ -3,4 +3,6 @@
 <use name="FWCore/ParameterSet"/>
 <use name="SimDataFormats/CaloHit"/>
 <use name="SimDataFormats/TrackingHit"/>
+<use   name="DQMServices/Core"/>
 <flags EDM_PLUGIN="1"/>
+
