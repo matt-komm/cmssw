@@ -138,7 +138,9 @@ L1CaloTowerTreeProducer::L1CaloTowerTreeProducer(const edm::ParameterSet& iConfi
 
 L1CaloTowerTreeProducer::~L1CaloTowerTreeProducer()
 {
- 
+  delete caloTPData_;
+  delete l1CaloTowerData_;
+  delete l1CaloClusterData_;
   // do anything here that needs to be done at desctruction time
   // (e.g. close files, deallocate resources etc.)
 
