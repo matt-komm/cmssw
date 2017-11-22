@@ -113,7 +113,7 @@ L1UpgradeTreeProducer::L1UpgradeTreeProducer(const edm::ParameterSet& iConfig)
 
 L1UpgradeTreeProducer::~L1UpgradeTreeProducer()
 {
- 
+  delete l1Upgrade;
   // do anything here that needs to be done at desctruction time
   // (e.g. close files, deallocate resources etc.)
 
