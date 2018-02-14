@@ -40,6 +40,11 @@ int mask_[9][9] = {
   { 1,1,1,1,1,1,1,1,2 },
 };
 
+// define number of central,forward phi rings in jet
+std::vector<std::pair<int,int> > jetSizes = {{4,4},{4,4},{4,4},{4,4},{4,4},{4,4},{4,4},{4,4},{4,4},{4,4},  //1-10
+					     {4,4},{4,4},{4,4},{4,4},{4,4},{4,4},{4,4},{4,4},{4,4},{4,3},  //11-20
+					     {4,3},{4,3},{3,2},{3,2},{3,2},{3,2},{2,1},{2,2},{0,0},        //21-28, dummy 29
+					     {1,2},{2,3},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2}}; //30-41
 
 std::vector<l1t::Jet>::iterator start_, end_;
 
@@ -99,7 +104,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
        
 	// the jets in this ring
 	std::vector<l1t::Jet> jetsRing;
-	
+
 	// loop over phi in the ring
 	for ( int iphi=1; iphi<=CaloTools::kHBHENrPhi; ++iphi ) {
 	  
@@ -117,7 +122,22 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	  if(iEt < floor(params_->jetSeedThreshold()/params_->towerLsbSum())) continue;
 	  
 	  // loop over towers in this jet
-	  for( int deta = -4; deta < 5; ++deta ) {
+
+	  //for( int deta = -4; deta < 5; ++deta ) {
+	  
+	  int etaMin(0),etaMax(0);
+
+	  if(etaSide==1){
+	    etaMin=jetSizes[abs(tow.hwEta())-1].first;
+	    etaMax=jetSizes[abs(tow.hwEta())-1].second+1;
+	  }
+	  if(etaSide==-1){
+	    etaMin=jetSizes[abs(tow.hwEta())-1].second;
+	    etaMax=jetSizes[abs(tow.hwEta())-1].first+1;
+	  }
+	
+	  for( int deta = (-1*etaMin); deta < etaMax; ++deta ) {
+
 	    for( int dphi = -4; dphi < 5; ++dphi ) {
 	      
 	      int towEt = 0;
@@ -131,7 +151,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	      // wrap over eta=0
 	      if (ieta > 0 && ietaTest <=0) ietaTest -= 1;
 	      if (ieta < 0 && ietaTest >=0) ietaTest += 1;
-	   
+	      
 	      // check jet mask and sum tower et
 	      const CaloTower& towTest = CaloTools::getTower(towers, CaloTools::caloEta(ietaTest), iphiTest);
 	      towEt = towTest.hwPt();
@@ -142,7 +162,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	      
 	      if (vetoCandidate) break;
 	      else iEt += towEt;
-	   
+
 	    }
 	    if(vetoCandidate) break; 
 	  }
@@ -152,7 +172,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 
 	    int rawEt = iEt;
 	    int puEt(0);
-	
+
 	    math::XYZTLorentzVector p4;
 	    int caloEta = CaloTools::caloEta(ieta);
 	    l1t::Jet jet( p4, -999, caloEta, iphi, 0);
@@ -181,12 +201,11 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	    jet.setTowerIPhi((short int) iphi);
 	    jet.setPUEt((short int) puEt);
 	    
-
 	    jetsRing.push_back(jet);
 	    alljets.push_back(jet);
 	    
 	  }
-	  
+
 	}
 
 	 // jet energy corrections
@@ -351,6 +370,17 @@ int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::chunkyDonutPUEstimate(l1t::Jet & 
   // number of strips in donut - should make this configurable
   int nStrips = 3;
 
+  int etaMin(0),etaMax(0);
+  
+  if(jetEta>0){
+    etaMin=jetSizes[abs(jetEta)-1].first;
+    etaMax=jetSizes[abs(jetEta)-1].second;
+  }
+  if(jetEta<0){
+    etaMin=jetSizes[abs(jetEta)-1].second;
+    etaMax=jetSizes[abs(jetEta)-1].first;
+  }
+  
   // loop over strips
   for (int stripIt=0; stripIt<nStrips; stripIt++) {
 
@@ -359,13 +389,13 @@ int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::chunkyDonutPUEstimate(l1t::Jet & 
     while ( iphiUp > CaloTools::kHBHENrPhi )   iphiUp   -= CaloTools::kHBHENrPhi;
     while ( iphiDown < 1 ) iphiDown += CaloTools::kHBHENrPhi;
 
-    int ietaUp   = jetEta + size + stripIt;
-    int ietaDown = jetEta - size - stripIt;
+    int ietaUp   = jetEta + (etaMax+1) + stripIt;
+    int ietaDown = jetEta - (etaMin+1) - stripIt;
     if ( jetEta<0 && ietaUp>=0 )   ietaUp   += 1;
     if ( jetEta>0 && ietaDown<=0 ) ietaDown -= 1;
     
     // do PhiUp and PhiDown
-    for (int ieta=jetEta-size+1; ieta<jetEta+size; ++ieta) {
+    for (int ieta=jetEta-etaMin; ieta<jetEta+etaMax+1; ++ieta) {
       
       if (abs(ieta) > CaloTools::mpEta(CaloTools::kHFEnd)) continue;
       
