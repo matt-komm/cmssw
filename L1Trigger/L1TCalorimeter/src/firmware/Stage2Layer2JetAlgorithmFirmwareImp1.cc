@@ -19,7 +19,7 @@
 #include <math.h>
 
 namespace l1t {
-  bool operator > ( const l1t::Jet& a, l1t::Jet& b ) {
+  bool operator > ( const l1t::Jet& a, const l1t::Jet& b ) {
     return  a.hwPt() > b.hwPt();
   }
 }
@@ -124,9 +124,8 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	  // loop over towers in this jet
 
 	  //for( int deta = -4; deta < 5; ++deta ) {
-	  
-	  int etaMin(0),etaMax(0);
 
+	  int etaMin(0),etaMax(0);
 	  if(etaSide==1){
 	    etaMin=jetSizes[abs(tow.hwEta())-1].first;
 	    etaMax=jetSizes[abs(tow.hwEta())-1].second+1;
@@ -135,7 +134,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	    etaMin=jetSizes[abs(tow.hwEta())-1].second;
 	    etaMax=jetSizes[abs(tow.hwEta())-1].first+1;
 	  }
-	
+
 	  for( int deta = (-1*etaMin); deta < etaMax; ++deta ) {
 
 	    for( int dphi = -4; dphi < 5; ++dphi ) {
@@ -151,7 +150,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	      // wrap over eta=0
 	      if (ieta > 0 && ietaTest <=0) ietaTest -= 1;
 	      if (ieta < 0 && ietaTest >=0) ietaTest += 1;
-	      
+
 	      // check jet mask and sum tower et
 	      const CaloTower& towTest = CaloTools::getTower(towers, CaloTools::caloEta(ietaTest), iphiTest);
 	      towEt = towTest.hwPt();
@@ -159,7 +158,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
               if      (mask_[8-(dphi+4)][deta+4] == 0) continue;
 	      else if (mask_[8-(dphi+4)][deta+4] == 1) vetoCandidate = (seedEt < towEt);
 	      else if (mask_[8-(dphi+4)][deta+4] == 2) vetoCandidate = (seedEt <= towEt);
-	      
+      
 	      if (vetoCandidate) break;
 	      else iEt += towEt;
 
@@ -200,10 +199,10 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	    jet.setTowerIEta((short int) caloEta);
 	    jet.setTowerIPhi((short int) iphi);
 	    jet.setPUEt((short int) puEt);
-	    
+
 	    jetsRing.push_back(jet);
 	    alljets.push_back(jet);
-	    
+
 	  }
 
 	}
@@ -236,8 +235,8 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::accuSort(std::vector<l1t::Jet> &
   
   for (unsigned int iJet = 0; iJet < jets.size(); iJet++)
     {
-      if (jets.at(iJet).hwEta() > 0) jetEtaPos.at(jets.at(iJet).hwEta()-1).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
-      else  jetEtaNeg.at(-(jets.at(iJet).hwEta()+1)).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
+      if (jets.at(iJet).hwEta() > 0) jetEtaPos.at(jets.at(iJet).hwEta()-1).at((72-jets.at(iJet).hwPhi())/4) = jets.at(iJet);
+      else  jetEtaNeg.at(-(jets.at(iJet).hwEta()+1)).at((72-jets.at(iJet).hwPhi())/4) = jets.at(iJet);
     }
   
   AccumulatingSort <l1t::Jet> etaPosSorter(7);
@@ -371,16 +370,16 @@ int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::chunkyDonutPUEstimate(l1t::Jet & 
   int nStrips = 3;
 
   int etaMin(0),etaMax(0);
-  
+
   if(jetEta>0){
-    etaMin=jetSizes[abs(jetEta)-1].first;
-    etaMax=jetSizes[abs(jetEta)-1].second;
+    etaMin=jetSizes[abs(jet.hwEta())-1].first;
+    etaMax=jetSizes[abs(jet.hwEta())-1].second;
   }
   if(jetEta<0){
-    etaMin=jetSizes[abs(jetEta)-1].second;
-    etaMax=jetSizes[abs(jetEta)-1].first;
+    etaMin=jetSizes[abs(jet.hwEta())-1].second;
+    etaMax=jetSizes[abs(jet.hwEta())-1].first;
   }
-  
+
   // loop over strips
   for (int stripIt=0; stripIt<nStrips; stripIt++) {
 
