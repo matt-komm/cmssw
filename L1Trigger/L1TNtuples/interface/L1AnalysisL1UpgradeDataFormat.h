@@ -10,6 +10,7 @@
 
 
 #include <vector>
+#include <array>
 
 namespace L1Analysis
 {
@@ -38,6 +39,37 @@ namespace L1Analysis
       kTotalHtyHF,
       kMissingHtHF,
       kTowerCount      
+  };
+  
+  struct CentralCellSums
+  {
+    short int cell0,cell1,cell2,cell3,cell4,cell5,cell6,cell7,cell8;
+    CentralCellSums(){}
+    CentralCellSums(const std::array<short int,9>& sums):
+        cell0(sums[0]),cell1(sums[1]),cell2(sums[2]),cell3(sums[3]),cell4(sums[4]),
+        cell5(sums[5]),cell6(sums[6]),cell7(sums[7]),cell8(sums[8])
+    {
+    }
+  };
+  
+  struct DonutCellSums
+  {
+    short int cell0,cell1,cell2,cell3,cell4,cell5,cell6,cell7,cell8,cell9;
+    short int cell10,cell11,cell12,cell13,cell14,cell15,cell16,cell17,cell18,cell19;
+    short int cell20,cell21,cell22,cell23,cell24,cell25,cell26,cell27,cell28,cell29;
+    short int cell30,cell31,cell32,cell33,cell34,cell35,cell36,cell37,cell38,cell39;
+    DonutCellSums(){}
+    DonutCellSums(const std::array<short int,40>& sums):
+        cell0(sums[0]),cell1(sums[1]),cell2(sums[2]),cell3(sums[3]),cell4(sums[4]),
+        cell5(sums[5]),cell6(sums[6]),cell7(sums[7]),cell8(sums[8]),cell9(sums[9]),
+        cell10(sums[10]),cell11(sums[11]),cell12(sums[12]),cell13(sums[13]),cell14(sums[14]),
+        cell15(sums[15]),cell16(sums[16]),cell17(sums[17]),cell18(sums[18]),cell19(sums[19]),
+        cell20(sums[20]),cell21(sums[21]),cell22(sums[22]),cell23(sums[23]),cell24(sums[24]),
+        cell25(sums[25]),cell26(sums[26]),cell27(sums[27]),cell28(sums[28]),cell29(sums[29]),
+        cell30(sums[30]),cell31(sums[31]),cell32(sums[32]),cell33(sums[33]),cell34(sums[34]),
+        cell35(sums[35]),cell36(sums[36]),cell37(sums[37]),cell38(sums[38]),cell39(sums[39])
+    {
+    }
   };
   
   struct L1AnalysisL1UpgradeDataFormat
@@ -129,7 +161,9 @@ namespace L1Analysis
       sumIEt.clear();
       sumIPhi.clear();
       sumBx.clear();
-
+        
+      jetCentralCellSums.clear();
+      jetDonutCellSums.clear();
     }
    
     unsigned short int nEGs;
@@ -186,6 +220,9 @@ namespace L1Analysis
     std::vector<short int> jetPUDonutEt1;
     std::vector<short int> jetPUDonutEt2;
     std::vector<short int> jetPUDonutEt3;
+    
+    std::vector<CentralCellSums> jetCentralCellSums;
+    std::vector<DonutCellSums> jetDonutCellSums;
 
     unsigned short int nMuons;
     std::vector<float>   muonEt;

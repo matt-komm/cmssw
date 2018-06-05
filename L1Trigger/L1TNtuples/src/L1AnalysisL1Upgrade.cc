@@ -87,6 +87,12 @@ void L1Analysis::L1AnalysisL1Upgrade::SetJet(const edm::Handle<l1t::JetBxCollect
 	l1upgrade_.jetPUDonutEt1.push_back(it->puDonutEt(1));
 	l1upgrade_.jetPUDonutEt2.push_back(it->puDonutEt(2));
 	l1upgrade_.jetPUDonutEt3.push_back(it->puDonutEt(3));
+	
+	//TODO: need to clear this
+	///std::cout<<"jet analysis"<<(it-jet->begin(ibx))<<": "<<it->puEt()<<"/"<<it->jetCentralCellSums[0]<<"/"<<it->bla<<std::endl;
+	l1upgrade_.jetCentralCellSums.emplace_back(it->jetCentralCellSums);
+	l1upgrade_.jetDonutCellSums.emplace_back(it->jetDonutCellSums);
+	
 	l1upgrade_.nJets++;
       }
     }

@@ -53,6 +53,9 @@ namespace l1t {
   virtual bool operator==(const l1t::Jet& rhs) const;
   virtual inline bool operator!=(const l1t::Jet& rhs) const { return !(operator==(rhs)); };
 
+  std::array<short int,9> jetCentralCellSums;
+  std::array<short int,40> jetDonutCellSums;
+
   private:
 
   // additional hardware quantities common to L1 global jet

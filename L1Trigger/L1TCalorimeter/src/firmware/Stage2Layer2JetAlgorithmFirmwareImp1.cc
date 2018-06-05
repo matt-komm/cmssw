@@ -40,6 +40,75 @@ int mask_[9][9] = {
   { 1,1,1,1,1,1,1,1,2 },
 };
 
+constexpr static std::array<std::pair<int,int>,9> offsetCentral = {{
+    {-4,-4}, //left
+    {-4,-1},
+    {-4,+1},
+    
+    {-1,+1}, //bottom
+    
+    {+1,+1}, //right
+    {+1,-1}, 
+    {+1,-4}, 
+    
+    {-1,-4}, //top
+    
+    {-1,-1} //center
+}};
+
+constexpr static std::array<std::pair<int,int>,40> offsetDonut = {{
+    //first ring
+    {-7,-7}, //left
+    {-7,-4}, 
+    {-7,-1},
+    {-7,+1},
+    {-7,+4},
+    
+    {-4,+4}, //bottom
+    {-1,+4}, 
+    {+1,+4}, 
+    
+    {+4,+4}, //right
+    {+4,+1},
+    {+4,-1},
+    {+4,-4},
+    {+4,-7},
+    
+    {+1,-7}, //top
+    {-1,-7},
+    {-4,-7},
+    
+    //second ring
+    
+    {-10,-10}, //left
+    {-10,-7}, 
+    {-10,-4}, 
+    {-10,-1}, 
+    {-10,+1},
+    {-10,+4},
+    {-10,+7},
+    
+    {-7,+7}, //bottom
+    {-4,+7},
+    {-1,+7},
+    {+1,+7},
+    {+4,+7},
+    
+    {+7,+7}, //right
+    {+7,+4},
+    {+7,+1},
+    {+7,-1},
+    {+7,-4},
+    {+7,-7},
+    {+7,-10},
+    
+    {+4,-10}, //top
+    {+1,-10},
+    {-1,-10},
+    {-4,-10},
+    {-7,-10}
+}};
+
 
 std::vector<l1t::Jet>::iterator start_, end_;
 
@@ -62,6 +131,72 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::processEvent(const std::vector<l
   // jets accumulated sort
   accuSort(jets);
 
+}
+
+void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::calculateCentralSums(
+    l1t::Jet& jet, const std::vector<l1t::CaloTower> & towers
+) const
+{
+    for (unsigned int ioff = 0; ioff < offsetCentral.size(); ++ioff)
+    {
+        int sum = 0.0;
+        //std::cout<<" cell "<<ioff<<"/"<<offsetCentral.size()<<std::endl;
+        for (int deta = 0; deta < 3; ++deta)
+        {
+            for (int dphi = 0; dphi < 3; ++dphi)
+            {
+                int ieta = jet.towerIEta()+deta+offsetCentral[ioff].first;
+                int iphi = jet.towerIPhi()+dphi+offsetCentral[ioff].second;
+                while ( iphi > CaloTools::kHBHENrPhi ) iphi -= CaloTools::kHBHENrPhi;
+                while ( iphi < 1 ) iphi += CaloTools::kHBHENrPhi;
+                if ( jet.towerIEta()<0 && ieta>=0 ) ieta += 1;
+                if ( jet.towerIEta()>0 && ieta<=0 ) ieta -= 1;
+                const CaloTower& tower = CaloTools::getTower(towers, CaloTools::caloEta(ieta), iphi);
+                int et = tower.hwPt();
+                if (et == CaloTools::kSatHcal || et == CaloTools::kSatEcal || et == CaloTools::kSatTower)
+                {
+                    sum = CaloTools::kSatJet;
+                    break;
+                } 
+                //std::cout<<" - "<<ieta<<","<<iphi<<" = "<<et<<std::endl;
+                sum += et;
+            }
+        }
+        //std::cout<<" - total = "<<sum<<std::endl;
+        jet.jetCentralCellSums[ioff]=sum;
+    }
+}
+
+void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::calculateDonutSums(
+    l1t::Jet& jet, const std::vector<l1t::CaloTower> & towers
+) const
+{
+    for (unsigned int ioff = 0; ioff < offsetDonut.size(); ++ioff)
+    {
+        int sum = 0.0;
+        
+        for (int deta = 0; deta < 3; ++deta)
+        {
+            for (int dphi = 0; dphi < 3; ++dphi)
+            {
+                int ieta = jet.towerIEta()+deta+offsetDonut[ioff].first;
+                int iphi = jet.towerIPhi()+dphi+offsetDonut[ioff].second;
+                while ( iphi > CaloTools::kHBHENrPhi ) iphi -= CaloTools::kHBHENrPhi;
+                while ( iphi < 1 ) iphi += CaloTools::kHBHENrPhi;
+                if ( jet.towerIEta()<0 && ieta>=0 ) ieta += 1;
+                if ( jet.towerIEta()>0 && ieta<=0 ) ieta -= 1;
+                const CaloTower& tower = CaloTools::getTower(towers, CaloTools::caloEta(ieta), iphi);
+                int et = tower.hwPt();
+                if (et == CaloTools::kSatHcal || et == CaloTools::kSatEcal || et == CaloTools::kSatTower)
+                {
+                    sum = CaloTools::kSatJet;
+                    break;
+                } 
+                sum += et;
+            }
+        }
+        jet.jetDonutCellSums[ioff]=sum;
+    }
 }
 
 
@@ -156,7 +291,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	    math::XYZTLorentzVector p4;
 	    int caloEta = CaloTools::caloEta(ieta);
 	    l1t::Jet jet( p4, -999, caloEta, iphi, 0);
-
+        /*
 	    if(!params_->jetBypassPUS()){
 	      if (PUSubMethod == "Donut") {
 		puEt = donutPUEstimate(ieta, iphi, 5, towers);	    
@@ -168,7 +303,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 		iEt -= puEt;
 	      }
 	    }
-	    
+	    */
 	    if (iEt<=0) continue;
 
 	    // if tower Et is saturated, saturate jet Et
@@ -180,6 +315,9 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	    jet.setTowerIEta((short int) caloEta);
 	    jet.setTowerIPhi((short int) iphi);
 	    jet.setPUEt((short int) puEt);
+	    calculateCentralSums(jet,towers);
+	    //std::cout<<"jet emu "<<(alljets.size())<<": "<<jet.puEt()<<"/"<<jet.jetCentralCellSums[0]<<std::endl;
+	    calculateDonutSums(jet,towers);
 	    
 
 	    jetsRing.push_back(jet);

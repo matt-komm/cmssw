@@ -62,5 +62,8 @@ namespace{
     L1Analysis::L1AnalysisRecoTauDataFormat        pL1tau; 
     L1Analysis::L1AnalysisRecoMuon2DataFormat      pL1muon2;
     L1Analysis::L1AnalysisRecoElectronDataFormat   pL1electron;
+    
+    L1Analysis::CentralCellSums centralCellSums;
+    L1Analysis::DonutCellSums donutCellSums;
    }
 }

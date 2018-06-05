@@ -8,6 +8,15 @@ void Jet::clear_extended(){
   seedEt_ = 0;
   puEt_ = 0;
   puDonutEt_[0] = puDonutEt_[1] = puDonutEt_[2] = puDonutEt_[3] = 0;
+  for (size_t i = 0; i < 9; ++i)
+  {
+    jetCentralCellSums[i] = 0;
+  }
+  
+  for (size_t i = 0; i < 40; ++i)
+  {
+    jetDonutCellSums[i] = 0;
+  }
 }
 
 Jet::Jet( const LorentzVector& p4,
