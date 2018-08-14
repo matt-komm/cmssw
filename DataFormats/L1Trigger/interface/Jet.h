@@ -6,6 +6,8 @@
 #include "DataFormats/L1Trigger/interface/BXVector.h"
 #include "DataFormats/L1Trigger/interface/L1TObjComparison.h"
 
+#include <array>
+
 namespace l1t {
 
   class Jet;
@@ -32,7 +34,17 @@ namespace l1t {
        int eta=0,
        int phi=0,
        int qual=0);
-
+       
+   /*
+   Jet(const Jet&) = delete;
+   Jet& operator(const Jet&) = delete;
+   Jet operator(const Jet&) = delete;
+   
+   Jet(Jet&&) = delete;
+   Jet& operator(Jet&&) = delete;
+   Jet operator(Jet&&) = delete;
+   */
+   
   ~Jet() override;
 
                   
@@ -52,6 +64,9 @@ namespace l1t {
 
   virtual bool operator==(const l1t::Jet& rhs) const;
   virtual inline bool operator!=(const l1t::Jet& rhs) const { return !(operator==(rhs)); };
+
+  std::array<short int,9> jetCentralCellSums;
+  std::array<short int,40> jetDonutCellSums;
 
   private:
 

@@ -357,6 +357,8 @@ l1t::Jet l1t::CaloTools::jetP4Demux(l1t::Jet& jet) {
   tmpJet.setPUDonutEt(1,jet.puDonutEt(1));
   tmpJet.setPUDonutEt(2,jet.puDonutEt(2));
   tmpJet.setPUDonutEt(3,jet.puDonutEt(3));
+  tmpJet.jetCentralCellSums = jet.jetCentralCellSums;
+  tmpJet.jetDonutCellSums = jet.jetDonutCellSums;
 
   return tmpJet;
   
@@ -444,6 +446,8 @@ l1t::Jet l1t::CaloTools::jetP4MP(l1t::Jet& jet) {
   tmpJet.setPUDonutEt(1,jet.puDonutEt(1));
   tmpJet.setPUDonutEt(2,jet.puDonutEt(2));
   tmpJet.setPUDonutEt(3,jet.puDonutEt(3));
+  tmpJet.jetCentralCellSums = jet.jetCentralCellSums;
+  tmpJet.jetDonutCellSums = jet.jetDonutCellSums;
 
   return tmpJet;
 

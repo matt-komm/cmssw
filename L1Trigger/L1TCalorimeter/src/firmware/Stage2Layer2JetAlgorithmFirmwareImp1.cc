@@ -40,6 +40,107 @@ int mask_[9][9] = {
   { 1,1,1,1,1,1,1,1,2 },
 };
 
+//jet size / donut side size per ieta of jet
+std::array<float,42> donutLowEtaRelSize = {{
+  0.000,
+  3.000, 3.000, 3.000, 3.000, 3.000, 3.000, 3.000, 3.000, 3.000, 3.000,
+  3.000, 3.000, 3.000, 3.000, 3.000, 3.000, 3.011, 3.061, 3.161, 3.322,
+  3.563, 3.912, 4.153, 5.161, 5.333, 5.595, 5.606, 5.327, 0.000, 4.298,
+  3.685, 3.571, 2.260, 2.495, 2.397, 3.522, 2.909, 2.568, 2.246, 1.898,
+  1.578
+}};
+
+std::array<float,42> donutHighEtaRelSize = {{
+  0.000,
+  3.000, 3.000, 3.000, 3.000, 3.000, 3.000, 3.000, 3.000, 3.000, 3.000,
+  3.000, 3.000, 3.000, 2.966, 2.827, 2.584, 2.298, 2.038, 1.805, 1.814,
+  1.372, 1.616, 1.650, 2.789, 2.651, 2.808, 2.964, 3.063, 0.000, 3.210,
+  3.208, 3.251, 2.350, 3.320, 5.215, 0.000, 0.000, 0.000, 0.000, 0.000,
+  0.000
+}};
+
+//jet size / donut side size in phi is always 3!
+
+
+//total jet size / donut size
+std::array<float,42> donutRelSize = {{
+  0.000,
+  0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750, 0.750,
+  0.750, 0.750, 0.750, 0.748, 0.739, 0.721, 0.697, 0.674, 0.651, 0.658,
+  0.597, 0.649, 0.661, 0.820, 0.812, 0.832, 0.846, 0.847, 0.000, 0.826,
+  0.800, 0.797, 0.652, 0.731, 0.784, 1.052, 0.990, 0.947, 0.899, 0.838,
+  0.769
+}};
+
+
+constexpr static std::array<std::pair<int,int>,9> offsetCentral = {{
+    {-4,-4}, //left //1
+    {-4,-1},
+    {-4,+2},
+    
+    {-1,+2}, //bottom
+    
+    {+2,+2}, //right
+    {+2,-1}, //5
+    {+2,-4}, 
+    
+    {-1,-4}, //top
+    
+    {-1,-1} //center
+}};
+
+constexpr static std::array<std::pair<int,int>,40> offsetDonut = {{
+    //first ring
+    {-7,-7}, //left //1
+    {-7,-4}, 
+    {-7,-1},
+    {-7,+2},
+    {-7,+5}, //5
+    
+    {-4,+5}, //bottom
+    {-1,+5}, 
+    {+2,+5}, 
+    
+    {+5,+5}, //right
+    {+5,+2}, //10
+    {+5,-1},
+    {+5,-4},
+    {+5,-7},
+    
+    {+2,-7}, //top
+    {-1,-7}, //15
+    {-4,-7},
+    
+    //second ring
+    
+    {-10,-10}, //left
+    {-10,-7}, 
+    {-10,-4}, 
+    {-10,-1}, //20
+    {-10,+2},
+    {-10,+5},
+    {-10,+8},
+    
+    {-7,+8}, //bottom 
+    {-4,+8}, //25
+    {-1,+8},
+    {+2,+8},
+    {+5,+8},
+    
+    {+8,+8}, //right
+    {+8,+5}, //30
+    {+8,+2},
+    {+8,-1},
+    {+8,-4},
+    {+8,-7}, 
+    {+8,-10}, //35
+    
+    {+5,-10}, //top
+    {+2,-10},
+    {-1,-10},
+    {-4,-10},
+    {-7,-10} //40
+}};
 
 std::vector<l1t::Jet>::iterator start_, end_;
 
@@ -65,11 +166,96 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::processEvent(const std::vector<l
 }
 
 
+void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::calculateCentralSums(
+    l1t::Jet& jet, const std::vector<l1t::CaloTower> & towers
+) const
+{
+    int centralSum = 0;
+    for (unsigned int ioff = 0; ioff < offsetCentral.size(); ++ioff)
+    {
+        int sum = 0.0;
+        //std::cout<<" cell "<<ioff<<"/"<<offsetCentral.size()<<std::endl;
+        for (int deta = 0; deta < 3; ++deta)
+        {
+            for (int dphi = 0; dphi < 3; ++dphi)
+            {
+                int ieta = jet.towerIEta()+deta+offsetCentral[ioff].first;
+                int iphi = jet.towerIPhi()+dphi+offsetCentral[ioff].second;
+                while ( iphi > CaloTools::kHBHENrPhi ) iphi -= CaloTools::kHBHENrPhi;
+                while ( iphi < 1 ) iphi += CaloTools::kHBHENrPhi;
+                if ( jet.towerIEta()<0 && ieta>=0 ) ieta += 1;
+                if ( jet.towerIEta()>0 && ieta<=0 ) ieta -= 1;
+                const CaloTower& tower = CaloTools::getTower(towers, CaloTools::caloEta(ieta), iphi);
+                int et = tower.hwPt();
+                if (et == CaloTools::kSatHcal || et == CaloTools::kSatEcal || et == CaloTools::kSatTower)
+                {
+                    sum = CaloTools::kSatJet;
+                    break;
+                } 
+                //std::cout<<" - "<<ieta<<","<<iphi<<" = "<<et<<std::endl;
+                sum += et;
+            }
+        }
+        //std::cout<<" - total = "<<sum<<std::endl;
+        centralSum+=sum;
+        jet.jetCentralCellSums[ioff]=sum;
+    }
+    //std::cout<<"central sum = "<<centralSum<<std::endl;
+}
+
+
+
+void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::calculateDonutSums(
+    l1t::Jet& jet, const std::vector<l1t::CaloTower> & towers
+) const
+{
+
+    for (unsigned int ioff = 0; ioff < offsetDonut.size(); ++ioff)
+    {
+        int sum = 0.0;
+        
+        for (int deta = 0; deta < 3; ++deta)
+        {
+            for (int dphi = 0; dphi < 3; ++dphi)
+            {
+                int ieta = jet.towerIEta()+deta+offsetDonut[ioff].first;
+                int iphi = jet.towerIPhi()+dphi+offsetDonut[ioff].second;
+                while ( iphi > CaloTools::kHBHENrPhi ) iphi -= CaloTools::kHBHENrPhi;
+                while ( iphi < 1 ) iphi += CaloTools::kHBHENrPhi;
+                if ( jet.towerIEta()<0 && ieta>=0 ) ieta += 1;
+                if ( jet.towerIEta()>0 && ieta<=0 ) ieta -= 1;
+                const CaloTower& tower = CaloTools::getTower(towers, CaloTools::caloEta(ieta), iphi);
+                int et = tower.hwPt();
+                if (et == CaloTools::kSatHcal || et == CaloTools::kSatEcal || et == CaloTools::kSatTower)
+                {
+                    sum = CaloTools::kSatJet;
+                    break;
+                } 
+                sum += et;
+            }
+        }
+
+        jet.jetDonutCellSums[ioff]=sum;
+    }
+
+}
+
+
+
 void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::CaloTower> & towers,
 						       std::vector<l1t::Jet> & jets, 
 						       std::vector<l1t::Jet> & alljets, 
 						       std::string PUSubMethod) {
   
+  
+    std::string PUSubMethodCfg = "";
+    auto itCfg = std::find(PUSubMethod.begin(),PUSubMethod.end(),':');
+    if (itCfg!=PUSubMethod.end())
+    {
+        PUSubMethodCfg = std::string(itCfg+1,PUSubMethod.end());
+        PUSubMethod = std::string(PUSubMethod.begin(),itCfg);
+    }
+    
   // etaSide=1 is positive eta, etaSide=-1 is negative eta
   for (int etaSide=1; etaSide>=-1; etaSide-=2) {
     
@@ -158,13 +344,15 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	    l1t::Jet jet( p4, -999, caloEta, iphi, 0);
 
 	    if(!params_->jetBypassPUS()){
+	        calculateCentralSums(jet,towers);
+	        calculateDonutSums(jet,towers);
 	      if (PUSubMethod == "Donut") {
 		puEt = donutPUEstimate(ieta, iphi, 5, towers);	    
 		iEt -= puEt;
 	      }
 	      
 	      if (PUSubMethod == "ChunkyDonut"){
-		puEt = chunkyDonutPUEstimate(jet, 5, towers);
+		puEt = chunkyDonutPUEstimate(jet, 5, towers,PUSubMethodCfg);
 		iEt -= puEt;
 	      }
 	    }
@@ -339,7 +527,7 @@ int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::donutPUEstimate(int jetEta,
 }
 
 int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::chunkyDonutPUEstimate(l1t::Jet & jet, int size, 
-								     const std::vector<l1t::CaloTower> & towers){
+								     const std::vector<l1t::CaloTower> & towers, const std::string& PUSubMethodCfg){
  
   int jetPhi = jet.hwPhi();
   int jetEta = CaloTools::mpEta(jet.hwEta());
@@ -350,6 +538,85 @@ int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::chunkyDonutPUEstimate(l1t::Jet & 
   
   // number of strips in donut - should make this configurable
   int nStrips = 3;
+  
+  
+  int phiRing4Up = 0;
+  int phiRing4Down = 0;
+  
+  int phiRing2Up = 0;
+  int phiRing2Down = 0;
+  
+  //crudly copy the function to sum over 2*(9*9) towers on both sides in phi
+  for (int stripIt=0; stripIt<2*9; stripIt++) 
+  {
+    int iphiUp   = jetPhi + size + stripIt;
+    int iphiDown = jetPhi - size - stripIt;
+    while ( iphiUp > CaloTools::kHBHENrPhi )   iphiUp   -= CaloTools::kHBHENrPhi;
+    while ( iphiDown < 1 ) iphiDown += CaloTools::kHBHENrPhi;
+
+    int ietaUp   = jetEta + size + stripIt;
+    int ietaDown = jetEta - size - stripIt;
+    if ( jetEta<0 && ietaUp>=0 )   ietaUp   += 1;
+    if ( jetEta>0 && ietaDown<=0 ) ietaDown -= 1;
+    
+    
+    // do PhiUp and PhiDown
+    for (int ieta=jetEta-size+1; ieta<jetEta+size; ++ieta) {
+      
+      if (abs(ieta) > CaloTools::mpEta(CaloTools::kHFEnd)) continue;
+      
+      int towEta = ieta;
+      if (jetEta>0 && towEta<=0) towEta-=1;
+      if (jetEta<0 && towEta>=0) towEta+=1;
+            
+      const CaloTower& towPhiUp = CaloTools::getTower(towers, CaloTools::caloEta(towEta), iphiUp);
+      int towEt = towPhiUp.hwPt();
+      phiRing2Up += towEt;
+            
+      const CaloTower& towPhiDown = CaloTools::getTower(towers, CaloTools::caloEta(towEta), iphiDown);
+      towEt = towPhiDown.hwPt();
+      phiRing2Down += towEt;
+    } 
+  }
+  //std::cout<<"----"<<jetPhi<<"----"<<std::endl;
+  //crudly copy the function to sum over 4*(9*9) towers on both sides in phi
+  for (int stripIt=0; stripIt<4*9; stripIt++) 
+  {
+    int iphiUp   = jetPhi + size + stripIt;
+    int iphiDown = jetPhi - size - stripIt;
+    while ( iphiUp > CaloTools::kHBHENrPhi )   iphiUp   -= CaloTools::kHBHENrPhi;
+    while ( iphiDown < 1 ) iphiDown += CaloTools::kHBHENrPhi;
+
+    int ietaUp   = jetEta + size + stripIt;
+    int ietaDown = jetEta - size - stripIt;
+    if ( jetEta<0 && ietaUp>=0 )   ietaUp   += 1;
+    if ( jetEta>0 && ietaDown<=0 ) ietaDown -= 1;
+    
+    //if (stripIt<3*9) std::cout<<iphiUp<<",";
+    //std::cout<<iphiDown<<",";
+    
+    // do PhiUp and PhiDown
+    for (int ieta=jetEta-size+1; ieta<jetEta+size; ++ieta) {
+      
+      if (abs(ieta) > CaloTools::mpEta(CaloTools::kHFEnd)) continue;
+      
+      int towEta = ieta;
+      if (jetEta>0 && towEta<=0) towEta-=1;
+      if (jetEta<0 && towEta>=0) towEta+=1;
+            
+      const CaloTower& towPhiUp = CaloTools::getTower(towers, CaloTools::caloEta(towEta), iphiUp);
+      int towEt = towPhiUp.hwPt();
+      //prevent double counting since phi ring is only 72-9 cells
+      if (stripIt<3*9)
+      {
+        phiRing4Up += towEt;
+      }
+            
+      const CaloTower& towPhiDown = CaloTools::getTower(towers, CaloTools::caloEta(towEta), iphiDown);
+      towEt = towPhiDown.hwPt();
+      phiRing4Down += towEt;
+    } 
+  }
 
   // loop over strips
   for (int stripIt=0; stripIt<nStrips; stripIt++) {
@@ -421,11 +688,64 @@ int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::chunkyDonutPUEstimate(l1t::Jet & 
   // return ( ring[1]+ring[2] ); 
 
   // use lowest 3 strips as PU estimate
-  std::sort( ring.begin(), ring.end() );
+for(unsigned int i=0; i<4; ++i) jet.setPUDonutEt(i, (short int) ring[i]);
   
-  for(unsigned int i=0; i<4; ++i) jet.setPUDonutEt(i, (short int) ring[i]);
-
-  return ( ring[0] + ring[1] + ring[2] );
+  
+  std::vector<float> ringCorrected(4,0);
+  ringCorrected[0] = ring[0]*3.;
+  ringCorrected[1] = ring[1]*3.;
+  if (jetEta>0)
+  {
+    ringCorrected[2] = ring[2]*donutHighEtaRelSize[std::abs(jetEta)];
+    ringCorrected[3] = ring[3]*donutLowEtaRelSize[std::abs(jetEta)];
+  }
+  else
+  {
+    ringCorrected[2] = ring[2]*donutLowEtaRelSize[std::abs(jetEta)];
+    ringCorrected[3] = ring[3]*donutHighEtaRelSize[std::abs(jetEta)];
+  }
+  //NOTE: important to do sorting after correcting since indices do not correspond to phi/eta sides
+  std::sort( ring.begin(), ring.end() );
+  std::sort( ringCorrected.begin(), ringCorrected.end() );
+  
+  if (PUSubMethodCfg=="min3")
+  {
+    //std::cout<<"min3"<<std::endl;
+    return (ring[0] + ring[1] + ring[2]); //sorted min3
+  }
+  if (PUSubMethodCfg=="mean4")
+  {
+    //std::cout<<"mean4"<<std::endl;
+    return (ring[0] + ring[1] + ring[2] + ring[3])*0.75;  //mean corrected by cell numbers: 3/4
+  }
+  if (PUSubMethodCfg=="mean4_corr")
+  {
+    //std::cout<<"mean4_corr"<<std::endl;
+    return (ring[0] + ring[1] + ring[2] + ring[3])*donutRelSize[std::abs(jetEta)]; //mean corrected by net area
+  }
+  if (PUSubMethodCfg=="corr_mean4")
+  {
+    //std::cout<<"corr_mean4"<<std::endl;
+    return (ringCorrected[0]+ringCorrected[1]+ringCorrected[2]+ringCorrected[3])/4.; //mean with each cell corrected individually
+  }
+  if (PUSubMethodCfg=="corr_min3")
+  {
+    //std::cout<<"corr_min3"<<std::endl;
+    return (ringCorrected[0]+ringCorrected[1]+ringCorrected[2])/3.; //min3 sorted after correcting each cell individually
+  }
+  if (PUSubMethodCfg=="phi4")
+  {
+    //std::cout<<"phi4"<<std::endl;
+    return (phiRing4Up+phiRing4Down)/7.; //phi4 ring (note since 72 in phi total; 9 for jet itself => only 7 9x9 left)
+  }
+  if (PUSubMethodCfg=="phi2")
+  {
+    //std::cout<<"phi2"<<std::endl;
+    return (phiRing2Up+phiRing2Down)/4.; //phi2 ring
+  }
+  
+  //std::cout<<"none"<<std::endl;
+  return 0;
   
 }
 

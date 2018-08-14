@@ -35,12 +35,16 @@ namespace l1t {
 
     double calibFit(double, double*);
     double calibFitErr(double,double*);
+    
+    void calculateCentralSums(l1t::Jet& jet, const std::vector<l1t::CaloTower> & towers) const;
+    void calculateDonutSums(l1t::Jet& jet, const std::vector<l1t::CaloTower> & towers) const;
+
 
     int donutPUEstimate(int jetEta, int jetPhi, int size,
                         const std::vector<l1t::CaloTower> & towers);
 
     int chunkyDonutPUEstimate(Jet & jet, int pos,
-                              const std::vector<l1t::CaloTower> & towers);
+                              const std::vector<l1t::CaloTower> & towers,const std::string& PUSubMethodCfg);
 
   private:
 
